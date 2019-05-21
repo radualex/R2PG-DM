@@ -1,12 +1,14 @@
 {
   "name": "r2pg-dm-backend",
   "version": "1.0.0",
-  "description": "The backend for the r2pg (express + typescript)",
+  "description": "The backend for the r2pg-dm (express + typescript)",
   "main": "app.js",
   "scripts": {
-    "tsc": "tsc",
-    "dev": "ts-node-dev --respawn --transpileOnly ./app/app.ts",
-    "prod": "tsc && node ./build/app.js"
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpileOnly ./src/app.ts",
+    "prod": "tsc && node ./build/app.js",
+    "start": "node --inspect=5858 -r ts-node/register ./src/app.ts",
+    "start:watch": "nodemon"
   },
   "keywords": [
     "r2pg-dm"
@@ -18,5 +20,21 @@
     "express": "^4.17.0",
     "ts-node-dev": "^1.0.0-pre.39",
     "typescript": "^3.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.0"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      ".git",
+      "node_modules"
+    ],
+    "watch": [
+      "src"
+    ],
+    "exec": "npm start",
+    "ext": "ts"
   }
 }

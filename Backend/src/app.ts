@@ -1,13 +1,13 @@
-// lib/app.ts
 import express = require('express');
 
-// Create a new express application instance
 const app: express.Application = express();
 
 app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
+const PORT = process.env.PORT || 3000;
+
 app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+  console.log(`Server is running in http://localhost:${PORT}`);
 });
