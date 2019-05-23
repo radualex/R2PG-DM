@@ -28,4 +28,10 @@ CREATE TABLE LivesIn(
 	FOREIGN KEY(placename, country) REFERENCES Location(placename, country)
 );
 
--- add tuples as well
+INSERT INTO Person(name, DoB) VALUES ('Bob', '1990');
+INSERT INTO Person(name, DoB) VALUES ('Sue', NULL);
+INSERT INTO Knows(person1, person2) VALUES ('Sue', 'Bob');
+INSERT INTO Location(placename, size, country) VALUES ('Austin', 'big', 'USA');
+INSERT INTO Location(placename, size, country) VALUES ('Eindhoven', 'small', 'NL');
+INSERT INTO LivesIn(name, placename, country) VALUES ('Bob', 'Austin', 'USA');
+INSERT INTO LivesIn(name, placename, country) VALUES ('Sue', 'Austin', 'USA');
