@@ -10,7 +10,15 @@ import lombok.Setter;
 public class CompositeForeignKey {
     @Getter
     @Setter
-    List<ForeignKey> ForeignKeys;
+    public List<ForeignKey> ForeignKeys;
+
+    @Getter
+    @Setter
+    public String SourceTable = new String();
+
+    @Getter
+    @Setter
+    public String TargetTable = new String();
 
     public CompositeForeignKey() {
         this.ForeignKeys = new ArrayList<ForeignKey>();
@@ -18,15 +26,11 @@ public class CompositeForeignKey {
 
     public void AddForeignKey(ForeignKey fk) {
         this.ForeignKeys.add(fk);
-    }
-
-    public boolean CheckIfForeignKeySameTargetTableNameExists(String targetTableName) {
-        List<ForeignKey> checkFk = this.ForeignKeys.stream().filter(p -> p.TargetTable.equals(targetTableName))
-                .collect(Collectors.toList());
-
-        if (checkFk.size() != 0) {
-            return true;
+        if (this.SourceTable.equals(new String())) {
+            this.SourceTable = fk.SourceTable;
         }
-        return false;
+        if (this.TargetTable.equals(new String())) {
+            this.TargetTable = fk.TargetTable;
+        }
     }
 }

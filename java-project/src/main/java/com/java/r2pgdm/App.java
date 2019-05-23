@@ -11,8 +11,11 @@ public class App {
     @Setter
     private static List<Table> Tables;
 
+    @Getter
+    @Setter
+    private static Mapping Mapping;
+
     public static void main(String[] args) {
-        // System.out.println("Hello World!");
         Tables = new ArrayList<Table>();
         String url = "jdbc:postgresql://localhost/r2pgdm?user=radu&password=root";
         Psql psql = new Psql(url);
@@ -27,12 +30,18 @@ public class App {
 
         psql.UpdateValues(Tables);
 
-        System.out.println("1");
+        Mapping = new Mapping(Tables);
+
+        System.out.println();
 
         // fks.get(1).ForeignKeys.forEach(fk -> System.out.println(fk.TargetTable + "
         // --- " + fk.SourceTable));
         // fks.forEach(p -> p.ForeignKeys.forEach(fk ->
         // System.out.println(fk.TargetTable + " --- " + fk.SourceTable)));
 
+    }
+
+    public static Table FindTable(String tName) {
+        return Tables.stream().filter(t -> t.TableName.equals(tName)).findFirst().get();
     }
 }

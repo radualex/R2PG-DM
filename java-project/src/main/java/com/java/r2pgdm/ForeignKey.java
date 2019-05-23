@@ -21,6 +21,6 @@ public class ForeignKey {
         this.SourceTable = st;
         this.TargetTable = tt;
         this.SourceAttribute = sa;
-        this.SourceTable = st;
+        this.TargetAttribute = ta;
     }
 }

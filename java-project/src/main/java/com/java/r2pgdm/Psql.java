@@ -61,6 +61,7 @@ public class Psql {
         }
     }
 
+    // Grouping is not correct (person1, person2) are 2 different keys
     public List<CompositeForeignKey> GetForeignKeys(String tableName) {
         List<CompositeForeignKey> Fks = new ArrayList<CompositeForeignKey>();
         try {
@@ -71,11 +72,12 @@ public class Psql {
                     String tt = foreignKeys.getString("PKTABLE_NAME");
                     String sa = foreignKeys.getString("FKCOLUMN_NAME");
                     String ta = foreignKeys.getString("PKCOLUMN_NAME");
+                    Integer keySeq = Integer.parseInt(foreignKeys.getString("KEY_SEQ"));
                     ForeignKey tempFk = new ForeignKey(st, tt, sa, ta);
 
                     for (int i = 0; i < Fks.size() && !flag; i++) {
                         CompositeForeignKey currentFk = Fks.get(i);
-                        if (currentFk.CheckIfForeignKeySameTargetTableNameExists(tt)) {
+                        if (keySeq > 1) {
                             currentFk.AddForeignKey(tempFk);
                             flag = true;
                         }
@@ -127,6 +129,7 @@ public class Psql {
                             e.printStackTrace();
                         }
                     });
+                    table.setRids(TupleIdentifierGenerator.GenerateNextRId());
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
