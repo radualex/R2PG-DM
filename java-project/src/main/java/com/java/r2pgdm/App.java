@@ -34,11 +34,6 @@ public class App {
 
         System.out.println();
 
-        // fks.get(1).ForeignKeys.forEach(fk -> System.out.println(fk.TargetTable + "
-        // --- " + fk.SourceTable));
-        // fks.forEach(p -> p.ForeignKeys.forEach(fk ->
-        // System.out.println(fk.TargetTable + " --- " + fk.SourceTable)));
-
     }
 
     public static Table FindTable(String tName) {

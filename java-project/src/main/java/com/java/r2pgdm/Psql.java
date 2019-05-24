@@ -17,7 +17,7 @@ public class Psql {
     private void Connect(String url) {
         try {
             _con = DriverManager.getConnection(url);
-            System.out.println("Connetion established.");
+            System.out.println("Connection established.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -61,7 +61,6 @@ public class Psql {
         }
     }
 
-    // Grouping is not correct (person1, person2) are 2 different keys
     public List<CompositeForeignKey> GetForeignKeys(String tableName) {
         List<CompositeForeignKey> Fks = new ArrayList<CompositeForeignKey>();
         try {

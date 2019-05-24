@@ -1,14 +1,7 @@
 package com.java.r2pgdm;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
-import org.javatuples.Pair;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -66,25 +59,10 @@ public class Table {
         this.NrTuples = this.Rids.size();
     }
 
-    public List<Pair<String, String>> getTuple(String label, String colName1, String colName2) {
-        List<Pair<String, String>> map = new ArrayList<Pair<String, String>>();
-        List<Integer> matchingIndices = new ArrayList<>();
-        Column id = this.FindColumn(colName1);
-        Column lbl = this.FindColumn(colName2);
-
-        for (int i = 0; i < lbl.Values.size(); i++) {
-            String element = lbl.Values.get(i);
-
-            if (element.equals(label)) {
-                matchingIndices.add(i);
-            }
-        }
-
-        for (int i = 0; i < matchingIndices.size(); i++) {
-            Pair<String, String> pair = new Pair<String, String>(id.Values.get(matchingIndices.get(i)), label);
-            map.add(pair);
-        }
-
-        return map;
+    public Integer GetIdFromProperty(Property p) {
+        Column col = Columns.stream().filter(c -> c.Attribute.equals(p.Key)).findFirst().get();
+        Integer index = col.Values.indexOf(p.Value);
+        return Rids.get(index);
     }
+
 }
