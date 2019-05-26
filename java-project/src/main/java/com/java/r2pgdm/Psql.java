@@ -6,8 +6,8 @@ import java.util.List;
 
 public class Psql {
     private static final String[] TYPES = new String[] { "TABLE" };
-    Connection _con;
-    DatabaseMetaData _metaData;
+    private Connection _con;
+    private DatabaseMetaData _metaData;
 
     public Psql(String url) {
         Connect(url);

@@ -9,15 +9,17 @@ import lombok.Setter;
 public class App {
     @Getter
     @Setter
-    private static List<Table> Tables;
+    private static List<Table> _tables;
 
     @Getter
     @Setter
-    private static Mapping Mapping;
+    private static Mapping _mapping;
 
+    //Get urls from args. Export sql somehow. Add Neo4J.
     public static void main(String[] args) {
-        Tables = new ArrayList<Table>();
+        _tables = new ArrayList<Table>();
         String url = "jdbc:postgresql://localhost/r2pgdm?user=radu&password=root";
+        String urlGraph = "jdbc:postgresql://localhost/graph?user=radu&password=root";
         Psql psql = new Psql(url);
         List<String> tables = psql.GetTableName();
         tables.forEach(t -> {
@@ -25,18 +27,17 @@ public class App {
             List<CompositeForeignKey> fks = psql.GetForeignKeys(t);
             List<Column> cols = psql.GetColumns(t);
             Table table = new Table(t, pk, fks, cols);
-            Tables.add(table);
+            _tables.add(table);
         });
 
-        psql.UpdateValues(Tables);
+        psql.UpdateValues(_tables);
 
-        Mapping = new Mapping(Tables);
-
-        System.out.println();
+        _mapping = new Mapping(_tables);
+        PsqlGraph psqlGraph = new PsqlGraph(urlGraph, _mapping);
 
     }
 
     public static Table FindTable(String tName) {
-        return Tables.stream().filter(t -> t.TableName.equals(tName)).findFirst().get();
+        return _tables.stream().filter(t -> t.TableName.equals(tName)).findFirst().get();
     }
 }
