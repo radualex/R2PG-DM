@@ -1,4 +1,4 @@
-package com.java.r2pgdm;
+package com.java.r2pgdm.graph;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package com.java.r2pgdm;
+package com.java.r2pgdm.graph;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -9,17 +9,25 @@ import lombok.Setter;
 public class Column {
     @Getter
     @Setter
-    public String Attribute;
+    public String SourceRelationName;
     @Getter
     @Setter
-    public List<String> Values;
+    public String SourceAttribute;
+    @Getter
+    @Setter
+    public String TargetRelationName;
+    @Getter
+    @Setter
+    public String TargetAttribute;
+    @Getter
+    @Setter
+    public String Value;
 
-    public Column(String att) {
-        this.Attribute = att;
-        this.Values = new ArrayList<String>();
-    }
-
-    public void UpdateValues(String value) {
-        this.Values.add(value);
+    public Column(String relName, String att, String val, String tRelName, String tAtt) {
+        this.SourceRelationName = relName;
+        this.SourceAttribute = att;
+        this.Value = val;
+        this.TargetRelationName = tRelName;
+        this.TargetAttribute = tAtt;
     }
 }
