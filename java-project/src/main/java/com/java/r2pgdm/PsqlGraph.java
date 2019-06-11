@@ -20,7 +20,7 @@ public class PsqlGraph {
     private void Connect(String url) {
         try {
             _con = DriverManager.getConnection(url);
-            System.out.println("Connection established.");
+            System.out.println("Connection PsqlGraph established.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -40,7 +40,7 @@ public class PsqlGraph {
     private void CreateNodeTable() {
         try {
             Statement stmt = _con.createStatement();
-            stmt.executeUpdate("CREATE TABLE node(id INTEGER NOT NULL, label VARCHAR(100), PRIMARY KEY (id));");
+            stmt.executeUpdate("CREATE TABLE node(id INTEGER NOT NULL, label TEXT, PRIMARY KEY (id));");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -50,7 +50,7 @@ public class PsqlGraph {
         try {
             Statement stmt = _con.createStatement();
             stmt.executeUpdate(
-                    "CREATE TABLE edge(id INTEGER NOT NULL, srcId VARCHAR(100), tgtId VARCHAR(100), label VARCHAR(100), PRIMARY KEY (id));");
+                    "CREATE TABLE edge(id INTEGER NOT NULL, srcId INTEGER, tgtId INTEGER, label TEXT, PRIMARY KEY (id));");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -60,7 +60,7 @@ public class PsqlGraph {
         try {
             Statement stmt = _con.createStatement();
             stmt.executeUpdate(
-                    "CREATE TABLE property(id INTEGER NOT NULL, key VARCHAR(100), value VARCHAR(100), PRIMARY KEY (id, key));");
+                    "CREATE TABLE property(id INTEGER NOT NULL, key TEXT, value TEXT, PRIMARY KEY (id, key));");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -69,10 +69,17 @@ public class PsqlGraph {
     public static void InsertPropertyRow(Property prop) {
 
         try {
-            Statement st = _con.createStatement();
-            Object[] args = { prop.Id, prop.Key, prop.Value };
-            String query = MessageFormat.format("INSERT INTO property VALUES ({0}, ''{1}'', ''{2}'');", args);
-            st.executeUpdate(query);
+            String sql = "INSERT INTO property VALUES(?,?,?);";
+            PreparedStatement st = _con.prepareStatement(sql);
+            st.setInt(1, Integer.parseInt(prop.Id));
+            st.setString(2, prop.Key);
+            st.setString(3, prop.Value);
+            // Object[] args = { prop.Id, prop.Key, prop.Value };
+            // String query = MessageFormat.format("INSERT INTO property VALUES ({0},
+            // ''{1}'', ''{2}'');", args);
+
+            Integer result = st.executeUpdate();
+            System.out.println(result.toString().concat(" property added."));
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -80,10 +87,18 @@ public class PsqlGraph {
 
     public static void InsertEdgeRow(Edge edge) {
         try {
-            Statement st = _con.createStatement();
-            Object[] args = { edge.Id, edge.SrcId, edge.TgtId, edge.Label };
-            String query = MessageFormat.format("INSERT INTO edge VALUES ({0}, ''{1}'', ''{2}'', ''{3}'');", args);
-            st.executeUpdate(query);
+            String sql = "INSERT INTO edge VALUES(?,?,?,?);";
+            PreparedStatement st = _con.prepareStatement(sql);
+            // Object[] args = { edge.Id, edge.SrcId, edge.TgtId, edge.Label };
+            // String query = MessageFormat.format("INSERT INTO edge VALUES ({0}, ''{1}'',
+            // ''{2}'', ''{3}'');", args);
+            st.setInt(1, Integer.parseInt(edge.Id));
+            st.setInt(2, Integer.parseInt(edge.SrcId));
+            st.setInt(3, Integer.parseInt(edge.TgtId));
+            st.setString(4, edge.Label);
+
+            Integer result = st.executeUpdate();
+            System.out.println(result.toString().concat(" edge added."));
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -91,9 +106,15 @@ public class PsqlGraph {
 
     public static void InsertNodeRow(Node n) {
         try {
-            Statement st = _con.createStatement();
-            String query = "INSERT INTO node VALUES(".concat(n.Id).concat(",'").concat(n.Label).concat("');");
-            st.executeUpdate(query);
+            String sql = "INSERT INTO node VALUES(?,?);";
+            PreparedStatement st = _con.prepareStatement(sql);
+            // String query = "INSERT INTO node
+            // VALUES(".concat(n.Id).concat(",'").concat(n.Label).concat("');");
+            st.setInt(1, Integer.parseInt(n.Id));
+            st.setString(2, n.Label);
+
+            Integer result = st.executeUpdate();
+            System.out.println(result.toString().concat(" node added."));
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -110,7 +131,6 @@ public class PsqlGraph {
             while (values.next()) {
                 results.add(values.getString(1));
             }
-            throw new NullPointerException("JoinNodeAndProperty is null.");
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -118,6 +138,25 @@ public class PsqlGraph {
             return results;
         }
 
+    }
+
+    public static void Statistics() {
+        String sql = "SELECT COUNT(*) as stats FROM node UNION SELECT COUNT(*) FROM property UNION SELECT COUNT(*) FROM edge;";
+        List<String> results = new ArrayList<>();
+
+        try {
+            Statement stmt = _con.createStatement();
+            ResultSet values = stmt.executeQuery(sql);
+            while (values.next()) {
+                results.add(values.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            System.out.println("# Nodes: ".concat(results.get(2)));
+            System.out.println("# Properties: ".concat(results.get(1)));
+            System.out.println("# Edges: ".concat(results.get(0)));
+        }
     }
 
     public void CreateGraphSQL() {

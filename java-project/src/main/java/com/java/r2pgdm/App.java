@@ -9,7 +9,8 @@ public class App {
 
     // Get urls from args. Export sql somehow. Add Neo4J.
     public static void main(String[] args) {
-        String url = "jdbc:postgresql://localhost/r2pgdm?user=radu&password=root";
+        String db = "world";
+        String url = "jdbc:postgresql://localhost/".concat(db).concat("?user=radu&password=root");
         String urlGraph = "jdbc:postgresql://localhost/graph?user=radu&password=root";
         Psql psql = new Psql(url);
         new PsqlGraph(urlGraph);
@@ -29,6 +30,7 @@ public class App {
         });
 
         System.out.println("Mapping - Done.");
+        PsqlGraph.Statistics();
 
     }
 }

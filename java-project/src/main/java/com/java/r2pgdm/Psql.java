@@ -24,7 +24,7 @@ public class Psql {
     private void Connect(String url) {
         try {
             _con = DriverManager.getConnection(url);
-            System.out.println("Connection established.");
+            System.out.println("Connection Psql established.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
