@@ -24,3 +24,8 @@ hs_err_pid*
 
 # Config giles
 *.ini
+
+# CSVs
+edges.csv
+nodes.csv
+properties.csv
