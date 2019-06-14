@@ -10,6 +10,11 @@ import com.java.r2pgdm.graph.Node;
 import com.java.r2pgdm.graph.Property;
 
 public class PsqlGraph {
+    /**
+     *
+     */
+
+    private static final int FIVE = 5;
     private static Connection _con;
 
     public PsqlGraph(String url) {
@@ -74,9 +79,6 @@ public class PsqlGraph {
             st.setInt(1, Integer.parseInt(prop.Id));
             st.setString(2, prop.Key);
             st.setString(3, prop.Value);
-            // Object[] args = { prop.Id, prop.Key, prop.Value };
-            // String query = MessageFormat.format("INSERT INTO property VALUES ({0},
-            // ''{1}'', ''{2}'');", args);
 
             Integer result = st.executeUpdate();
             System.out.println(result.toString().concat(" property added."));
@@ -89,9 +91,6 @@ public class PsqlGraph {
         try {
             String sql = "INSERT INTO edge VALUES(?,?,?,?);";
             PreparedStatement st = _con.prepareStatement(sql);
-            // Object[] args = { edge.Id, edge.SrcId, edge.TgtId, edge.Label };
-            // String query = MessageFormat.format("INSERT INTO edge VALUES ({0}, ''{1}'',
-            // ''{2}'', ''{3}'');", args);
             st.setInt(1, Integer.parseInt(edge.Id));
             st.setInt(2, Integer.parseInt(edge.SrcId));
             st.setInt(3, Integer.parseInt(edge.TgtId));
@@ -108,8 +107,6 @@ public class PsqlGraph {
         try {
             String sql = "INSERT INTO node VALUES(?,?);";
             PreparedStatement st = _con.prepareStatement(sql);
-            // String query = "INSERT INTO node
-            // VALUES(".concat(n.Id).concat(",'").concat(n.Label).concat("');");
             st.setInt(1, Integer.parseInt(n.Id));
             st.setString(2, n.Label);
 
@@ -120,9 +117,9 @@ public class PsqlGraph {
         }
     }
 
-    public static List<String> JoinNodeAndProperty(String relName, String val) {
+    public static List<String> JoinNodeAndProperty(String relName, String key, String val) {
         String sql = "SELECT n.id, n.label, p.key, p.value FROM node n INNER JOIN property p ON n.id = p.id AND p.value='"
-                .concat(val).concat("' AND n.label='").concat(relName).concat("';");
+                .concat(val).concat("' AND p.key='").concat(key).concat("' AND n.label='").concat(relName).concat("';");
         List<String> results = new ArrayList<>();
 
         try {
@@ -156,6 +153,51 @@ public class PsqlGraph {
             System.out.println("# Nodes: ".concat(results.get(2)));
             System.out.println("# Properties: ".concat(results.get(1)));
             System.out.println("# Edges: ".concat(results.get(0)));
+        }
+    }
+
+    public static ResultSet GetNodeData() {
+        String sql = "select * from node;";
+
+        try {
+            PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            stmt.setFetchSize(FIVE);
+            ResultSet values = stmt.executeQuery();
+            return values;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ResultSet GetPropertyData() {
+        String sql = "select * from property;";
+
+        try {
+            PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            stmt.setFetchSize(FIVE);
+            ResultSet values = stmt.executeQuery();
+            return values;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ResultSet GetEdgeData() {
+        String sql = "select * from edge;";
+
+        try {
+            PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            stmt.setFetchSize(FIVE);
+            ResultSet values = stmt.executeQuery();
+            return values;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

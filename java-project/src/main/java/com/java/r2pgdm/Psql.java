@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.naming.spi.DirStateFactory.Result;
+
 import com.java.r2pgdm.graph.Edge;
 import com.java.r2pgdm.graph.Node;
 import com.java.r2pgdm.graph.Property;
@@ -155,6 +157,36 @@ public class Psql {
         }
     }
 
+    private String CreateNode(ResultSet values, String relName) {
+        try {
+            Integer rId = values.getInt(1);
+            String currIdentifier = Identifier.id(Optional.of(rId), Optional.of(relName), null, null, null, null, null)
+                    .toString();
+            Node n = new Node(currIdentifier, relName);
+            PsqlGraph.InsertNodeRow(n);
+            return currIdentifier;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void CreateProperty(ResultSet values, ResultSetMetaData valuesMd, String currIdentifier) {
+        try {
+            int length = valuesMd.getColumnCount();
+            for (int i = 2; i <= length; i++) {
+                String currAtt = valuesMd.getColumnName(i);
+                Object currVal = values.getObject(i);
+                if (currVal != null) {
+                    Property p = new Property(currIdentifier, currAtt, currVal.toString());
+                    PsqlGraph.InsertPropertyRow(p);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     // #endregion
 
     public void CreateNodesAndProperties(String relName) {
@@ -166,23 +198,8 @@ public class Psql {
             ResultSet values = stmt.executeQuery();
             ResultSetMetaData valuesMd = values.getMetaData();
             while (values.next()) {
-                int length = valuesMd.getColumnCount();
-
-                // Insert node for current tuple. (Refactor to (ResultSet rs) -> String currId )
-                Integer rId = values.getInt(1);
-                String currIdentifier = Identifier.id(rId, relName).toString();
-                Node n = new Node(currIdentifier, relName);
-                PsqlGraph.InsertNodeRow(n);
-
-                // Insert props (Refactor to (ResultSet rs, ResultSetMetaData rsmd) -> void)
-                for (int i = 2; i <= length; i++) {
-                    String currAtt = valuesMd.getColumnName(i);
-                    Object currVal = values.getObject(i);
-                    if (currVal != null) {
-                        Property p = new Property(currIdentifier, currAtt, currVal.toString());
-                        PsqlGraph.InsertPropertyRow(p);
-                    }
-                }
+                String currIdentifier = CreateNode(values, relName);
+                CreateProperty(values, valuesMd, currIdentifier);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -222,12 +239,19 @@ public class Psql {
 
             for (int z = 0; z < length; z++) {
                 Column curr = results.get(z);
-                List<String> sNodeIds = PsqlGraph.JoinNodeAndProperty(cfk.SourceTable, curr.Value);
-                List<String> tNodeIds = PsqlGraph.JoinNodeAndProperty(cfk.TargetTable, curr.Value);
+                // for each value -> get the node ids of the nodes with label
+                // cfk.SourceTable/cfk.TargetTable
+                // and has a property value = curr.Value
+                List<String> sNodeIds = PsqlGraph.JoinNodeAndProperty(curr.SourceRelationName, curr.SourceAttribute,
+                        curr.Value);
+                List<String> tNodeIds = PsqlGraph.JoinNodeAndProperty(curr.TargetRelationName, curr.TargetAttribute,
+                        curr.Value);
+                // For all ids obtained -> create edge from all source ids to all target ids.
                 for (int i = 0; i < sNodeIds.size(); i++) {
                     String sNodeId = sNodeIds.get(i);
                     for (int j = 0; j < tNodeIds.size(); j++) {
-                        Integer id = Identifier.id(rId, cfk.SourceTable, sId, cfk.TargetTable, fksR, fksS);
+                        Integer id = Identifier.id(Optional.of(rId), Optional.of(cfk.SourceTable), null,
+                                Optional.of(sId), Optional.of(cfk.TargetTable), Optional.of(fksR), Optional.of(fksS));
                         String tNodeId = tNodeIds.get(j);
                         PsqlGraph.InsertEdgeRow(new Edge(id.toString(), sNodeId, tNodeId,
                                 cfk.SourceTable.concat("-").concat(cfk.TargetTable)));
