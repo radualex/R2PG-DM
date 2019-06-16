@@ -1,7 +1,6 @@
 package com.java.r2pgdm;
 
 import java.sql.*;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,21 +9,18 @@ import com.java.r2pgdm.graph.Node;
 import com.java.r2pgdm.graph.Property;
 
 public class PsqlGraph {
-    /**
-     *
-     */
 
     private static final int FIVE = 5;
     private static Connection _con;
 
-    public PsqlGraph(String url) {
-        Connect(url);
+    public PsqlGraph(String url, String user, String pass) {
+        Connect(url, user, pass);
         CreateGraphSQL();
     }
 
-    private void Connect(String url) {
+    private void Connect(String url, String user, String pass) {
         try {
-            _con = DriverManager.getConnection(url);
+            _con = DriverManager.getConnection(url, user, pass);
             System.out.println("Connection PsqlGraph established.");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -65,7 +61,7 @@ public class PsqlGraph {
         try {
             Statement stmt = _con.createStatement();
             stmt.executeUpdate(
-                    "CREATE TABLE property(id INTEGER NOT NULL, key TEXT, value TEXT, PRIMARY KEY (id, key));");
+                    "CREATE TABLE property(id INTEGER NOT NULL, pkey VARCHAR(256), pvalue TEXT, PRIMARY KEY (id, pkey));");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -118,8 +114,8 @@ public class PsqlGraph {
     }
 
     public static List<String> JoinNodeAndProperty(String relName, String key, String val) {
-        String sql = "SELECT n.id, n.label, p.key, p.value FROM node n INNER JOIN property p ON n.id = p.id AND p.value='"
-                .concat(val).concat("' AND p.key='").concat(key).concat("' AND n.label='").concat(relName).concat("';");
+        String sql = "SELECT n.id, n.label, p.pkey, p.pvalue FROM node n INNER JOIN property p ON n.id = p.id AND p.pvalue='"
+                .concat(val).concat("' AND p.pkey='").concat(key).concat("' AND n.label='").concat(relName).concat("';");
         List<String> results = new ArrayList<>();
 
         try {

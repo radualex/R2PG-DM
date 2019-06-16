@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.naming.spi.DirStateFactory.Result;
-
 import com.java.r2pgdm.graph.Edge;
 import com.java.r2pgdm.graph.Node;
 import com.java.r2pgdm.graph.Property;
@@ -18,14 +16,14 @@ public class Psql {
     private Connection _con;
     private DatabaseMetaData _metaData;
 
-    public Psql(String url) {
-        Connect(url);
+    public Psql(String url, String user, String pass) {
+        Connect(url, user, pass);
         GetMetaData();
     }
 
-    private void Connect(String url) {
+    private void Connect(String url, String user, String pass) {
         try {
-            _con = DriverManager.getConnection(url);
+            _con = DriverManager.getConnection(url, user, pass);
             System.out.println("Connection Psql established.");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -43,7 +41,7 @@ public class Psql {
     public List<String> GetTableName() {
         List<String> tables = new ArrayList<String>();
         try {
-            ResultSet rs = _metaData.getTables(null, null, "%", TYPES);
+            ResultSet rs = _metaData.getTables("r2pgdm", null, "%", TYPES);
             while (rs.next()) {
                 tables.add(rs.getString(3));
             }
@@ -91,8 +89,17 @@ public class Psql {
 
     // #region Helpers
     private Integer GetTupleIdFromRelation(String relName, String val, String key) {
-        String sql = "SELECT (ctid::text::point)[1]::bigint AS rId FROM ".concat(relName).concat(" WHERE ").concat(val)
-                .concat("='").concat(key).concat("';");
+        // String sql = "SELECT (ctid::text::point)[1]::bigint AS rId FROM
+        // ".concat(relName).concat(" WHERE ").concat(val)
+        // .concat("='").concat(key).concat("';");
+        StringBuilder sqlSB = new StringBuilder("WITH myTable AS");
+        sqlSB.append("(");
+        sqlSB.append("SELECT ".concat(val).concat(", ROW_NUMBER() OVER (ORDER BY ").concat(val).concat(") AS rId"));
+        sqlSB.append(" FROM ".concat(relName));
+        sqlSB.append(")");
+        sqlSB.append("SELECT rId FROM myTable WHERE ".concat(val).concat("='").concat(key).concat("';"));
+
+        String sql = sqlSB.toString();
 
         try {
             Statement stmt = _con.createStatement();
@@ -157,9 +164,10 @@ public class Psql {
         }
     }
 
-    private String CreateNode(ResultSet values, String relName) {
+    private String CreateNode(ResultSet values, ResultSetMetaData valuesMd, String relName) {
         try {
-            Integer rId = values.getInt(1);
+            int columns = valuesMd.getColumnCount();
+            Integer rId = values.getInt(columns);
             String currIdentifier = Identifier.id(Optional.of(rId), Optional.of(relName), null, null, null, null, null)
                     .toString();
             Node n = new Node(currIdentifier, relName);
@@ -174,7 +182,7 @@ public class Psql {
     private void CreateProperty(ResultSet values, ResultSetMetaData valuesMd, String currIdentifier) {
         try {
             int length = valuesMd.getColumnCount();
-            for (int i = 2; i <= length; i++) {
+            for (int i = 1; i < length; i++) {
                 String currAtt = valuesMd.getColumnName(i);
                 Object currVal = values.getObject(i);
                 if (currVal != null) {
@@ -190,7 +198,9 @@ public class Psql {
     // #endregion
 
     public void CreateNodesAndProperties(String relName) {
-        String sql = "SELECT (ctid::text::point)[1]::bigint AS rId, * FROM ".concat(relName);
+        // String sql = "SELECT (ctid::text::point)[1]::bigint AS rId, * FROM ".concat(relName);
+        String sql = "SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS rId FROM ".concat(relName);
+
         try {
             PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
                     ResultSet.CONCUR_READ_ONLY);
@@ -198,7 +208,7 @@ public class Psql {
             ResultSet values = stmt.executeQuery();
             ResultSetMetaData valuesMd = values.getMetaData();
             while (values.next()) {
-                String currIdentifier = CreateNode(values, relName);
+                String currIdentifier = CreateNode(values, valuesMd, relName);
                 CreateProperty(values, valuesMd, currIdentifier);
             }
         } catch (SQLException e) {

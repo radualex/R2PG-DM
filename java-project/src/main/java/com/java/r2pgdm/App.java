@@ -1,13 +1,8 @@
 package com.java.r2pgdm;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
-
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
 
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
@@ -21,13 +16,12 @@ public class App {
             Config input = GetConfiguration(ini.get("input"));
             Config output = GetConfiguration(ini.get("output"));
             String urlInput = "jdbc:".concat(input.Driver).concat("://").concat(input.Host).concat("/")
-                    .concat(input.Database).concat("?user=").concat(input.User).concat("&password=")
-                    .concat(input.Password);
+                    .concat(input.Database);
             String urlOutput = "jdbc:".concat(output.Driver).concat("://").concat(output.Host).concat("/")
-                    .concat(output.Database).concat("?user=").concat(output.User).concat("&password=")
-                    .concat(output.Password);
-            Psql psql = new Psql(urlInput);
-            new PsqlGraph(urlOutput);
+                    .concat(output.Database);
+
+            Psql psql = new Psql(urlInput, input.User, input.Password);
+            new PsqlGraph(urlOutput, output.User, output.Password);
 
             // Create node + props
             List<String> tables = psql.GetTableName();
