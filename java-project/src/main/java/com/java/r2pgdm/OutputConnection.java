@@ -8,12 +8,11 @@ import com.java.r2pgdm.graph.Edge;
 import com.java.r2pgdm.graph.Node;
 import com.java.r2pgdm.graph.Property;
 
-public class PsqlGraph {
+public class OutputConnection {
 
-    private static final int FIVE = 5;
-    private static Connection _con;
+    public static Connection _con;
 
-    public PsqlGraph(String url, String user, String pass) {
+    public OutputConnection(String url, String user, String pass) {
         Connect(url, user, pass);
         CreateGraphSQL();
     }
@@ -67,33 +66,40 @@ public class PsqlGraph {
         }
     }
 
-    public static void InsertPropertyRow(Property prop) {
+    public static void InsertPropertyRow(ResultSet values, ResultSetMetaData valuesMd, String currIdentifier) {
 
+        String sql = "INSERT INTO property VALUES(?,?,?);";
         try {
-            String sql = "INSERT INTO property VALUES(?,?,?);";
-            PreparedStatement st = _con.prepareStatement(sql);
-            st.setInt(1, Integer.parseInt(prop.Id));
-            st.setString(2, prop.Key);
-            st.setString(3, prop.Value);
+            int length = valuesMd.getColumnCount();
 
-            Integer result = st.executeUpdate();
-            System.out.println(result.toString().concat(" property added."));
+            PreparedStatement st = _con.prepareStatement(sql);
+            for (int i = 1; i < length; i++) {
+                String currAtt = valuesMd.getColumnName(i);
+                Object currVal = values.getObject(i);
+                if (currVal != null) {
+                    Property prop = new Property(currIdentifier, currAtt, currVal.toString());
+                    st.setInt(1, Integer.parseInt(prop.Id));
+                    st.setString(2, prop.Key);
+                    st.setString(3, prop.Value);
+                    st.addBatch();
+                }
+            }
+            int[] result = st.executeBatch();
+            System.out.println(result.length + " property(ies) added.");
+
         } catch (SQLException e) {
+            System.out.println(sql);
             e.printStackTrace();
         }
     }
 
     public static void InsertEdgeRow(Edge edge) {
         try {
-            String sql = "INSERT INTO edge VALUES(?,?,?,?);";
-            PreparedStatement st = _con.prepareStatement(sql);
-            st.setInt(1, Integer.parseInt(edge.Id));
-            st.setInt(2, Integer.parseInt(edge.SrcId));
-            st.setInt(3, Integer.parseInt(edge.TgtId));
-            st.setString(4, edge.Label);
-
-            Integer result = st.executeUpdate();
-            System.out.println(result.toString().concat(" edge added."));
+            App._statementEdges.setInt(1, Integer.parseInt(edge.Id));
+            App._statementEdges.setInt(2, Integer.parseInt(edge.SrcId));
+            App._statementEdges.setInt(3, Integer.parseInt(edge.TgtId));
+            App._statementEdges.setString(4, edge.Label);
+            App._statementEdges.addBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -115,7 +121,8 @@ public class PsqlGraph {
 
     public static List<String> JoinNodeAndProperty(String relName, String key, String val) {
         String sql = "SELECT n.id, n.label, p.pkey, p.pvalue FROM node n INNER JOIN property p ON n.id = p.id AND p.pvalue='"
-                .concat(val).concat("' AND p.pkey='").concat(key).concat("' AND n.label='").concat(relName).concat("';");
+                .concat(val).concat("' AND p.pkey='").concat(key).concat("' AND n.label='").concat(relName)
+                .concat("';");
         List<String> results = new ArrayList<>();
 
         try {
@@ -125,6 +132,7 @@ public class PsqlGraph {
                 results.add(values.getString(1));
             }
         } catch (SQLException e) {
+            System.out.println(sql);
             e.printStackTrace();
             return null;
         } finally {
@@ -144,11 +152,12 @@ public class PsqlGraph {
                 results.add(values.getString(1));
             }
         } catch (SQLException e) {
+            System.out.println(sql);
             e.printStackTrace();
         } finally {
-            System.out.println("# Nodes: ".concat(results.get(2)));
+            System.out.println("# Nodes: ".concat(results.get(0)));
             System.out.println("# Properties: ".concat(results.get(1)));
-            System.out.println("# Edges: ".concat(results.get(0)));
+            System.out.println("# Edges: ".concat(results.get(2)));
         }
     }
 
@@ -158,10 +167,11 @@ public class PsqlGraph {
         try {
             PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
                     ResultSet.CONCUR_READ_ONLY);
-            stmt.setFetchSize(FIVE);
+            stmt.setFetchSize(500);
             ResultSet values = stmt.executeQuery();
             return values;
         } catch (SQLException e) {
+            System.out.println(sql);
             e.printStackTrace();
             return null;
         }
@@ -173,10 +183,11 @@ public class PsqlGraph {
         try {
             PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
                     ResultSet.CONCUR_READ_ONLY);
-            stmt.setFetchSize(FIVE);
+            stmt.setFetchSize(500);
             ResultSet values = stmt.executeQuery();
             return values;
         } catch (SQLException e) {
+            System.out.println(sql);
             e.printStackTrace();
             return null;
         }
@@ -188,10 +199,11 @@ public class PsqlGraph {
         try {
             PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
                     ResultSet.CONCUR_READ_ONLY);
-            stmt.setFetchSize(FIVE);
+            stmt.setFetchSize(500);
             ResultSet values = stmt.executeQuery();
             return values;
         } catch (SQLException e) {
+            System.out.println(sql);
             e.printStackTrace();
             return null;
         }

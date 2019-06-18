@@ -2,6 +2,10 @@ package com.java.r2pgdm;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import org.ini4j.InvalidFileFormatException;
@@ -9,6 +13,7 @@ import org.ini4j.Wini;
 import org.ini4j.Profile.Section;
 
 public class App {
+    public static PreparedStatement _statementEdges;
 
     public static void main(String[] args) {
         try {
@@ -16,29 +21,42 @@ public class App {
             Config input = GetConfiguration(ini.get("input"));
             Config output = GetConfiguration(ini.get("output"));
             String urlInput = "jdbc:".concat(input.Driver).concat("://").concat(input.Host).concat("/")
-                    .concat(input.Database);
+                    .concat(input.Database).concat("?serverTimezone=UTC");
             String urlOutput = "jdbc:".concat(output.Driver).concat("://").concat(output.Host).concat("/")
-                    .concat(output.Database);
+                    .concat(output.Database).concat("?serverTimezone=UTC");
 
-            Psql psql = new Psql(urlInput, input.User, input.Password);
-            new PsqlGraph(urlOutput, output.User, output.Password);
+            InputConnection inputConn = new InputConnection(urlInput, input.User, input.Password, input.Database);
+            OutputConnection outputConn = new OutputConnection(urlOutput, output.User, output.Password);
 
+            Instant starts = Instant.now();
             // Create node + props
-            List<String> tables = psql.GetTableName();
+            List<String> tables = inputConn.GetTableName();
             tables.forEach(t -> {
-                psql.CreateNodesAndProperties(t);
+                inputConn.CreateNodesAndProperties(t);
             });
 
             // Create edges
             tables.forEach(t -> {
-                List<CompositeForeignKey> fks = psql.GetForeignKeys(t);
+
+                List<CompositeForeignKey> fks = inputConn.GetForeignKeys(t);
                 fks.forEach(fk -> {
-                    psql.CreateEdges(fk);
+                    String sql = "INSERT INTO edge VALUES(?,?,?,?);";
+                    try {
+                        _statementEdges = OutputConnection._con.prepareStatement(sql);
+                        inputConn.CreateEdges(fk);
+                        int[] result = _statementEdges.executeBatch();
+                        System.out.println(result.length + " edge(s) added.");
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 });
+
             });
 
+            Instant ends = Instant.now();
+            System.out.println(Duration.between(starts, ends).toMillis());
             System.out.println("Mapping - Done.");
-            PsqlGraph.Statistics();
+            OutputConnection.Statistics();
 
             Export.GenerateCSVs();
 

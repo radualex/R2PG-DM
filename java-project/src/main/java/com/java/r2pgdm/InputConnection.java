@@ -7,16 +7,18 @@ import java.util.Optional;
 
 import com.java.r2pgdm.graph.Edge;
 import com.java.r2pgdm.graph.Node;
-import com.java.r2pgdm.graph.Property;
 
-public class Psql {
+public class InputConnection {
 
+    private static final String COLUMN_NAME = "COLUMN_NAME";
     private static final int FIVE = 5;
     private static final String[] TYPES = new String[] { "TABLE" };
     private Connection _con;
     private DatabaseMetaData _metaData;
+    private String _schema;
 
-    public Psql(String url, String user, String pass) {
+    public InputConnection(String url, String user, String pass, String schema) {
+        this._schema = schema;
         Connect(url, user, pass);
         GetMetaData();
     }
@@ -24,6 +26,7 @@ public class Psql {
     private void Connect(String url, String user, String pass) {
         try {
             _con = DriverManager.getConnection(url, user, pass);
+            _con.setAutoCommit(false);
             System.out.println("Connection Psql established.");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -41,7 +44,7 @@ public class Psql {
     public List<String> GetTableName() {
         List<String> tables = new ArrayList<String>();
         try {
-            ResultSet rs = _metaData.getTables("r2pgdm", null, "%", TYPES);
+            ResultSet rs = _metaData.getTables(_schema, null, "%", TYPES);
             while (rs.next()) {
                 tables.add(rs.getString(3));
             }
@@ -55,7 +58,7 @@ public class Psql {
     public List<CompositeForeignKey> GetForeignKeys(String tableName) {
         List<CompositeForeignKey> Fks = new ArrayList<CompositeForeignKey>();
         try {
-            try (ResultSet foreignKeys = _metaData.getImportedKeys(null, null, tableName)) {
+            try (ResultSet foreignKeys = _metaData.getImportedKeys(_schema, null, tableName)) {
                 while (foreignKeys.next()) {
                     boolean flag = false;
                     String st = foreignKeys.getString("FKTABLE_NAME");
@@ -87,6 +90,22 @@ public class Psql {
         }
     }
 
+    public List<String> GetColumns(String relName) {
+        List<String> list = new ArrayList<>();
+
+        try {
+            ResultSet rs = _metaData.getColumns(_schema, null, relName, null);
+            while (rs.next()) {
+                String col = rs.getString(COLUMN_NAME);
+                list.add(col);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            return list;
+        }
+    }
+
     // #region Helpers
     private Integer GetTupleIdFromRelation(String relName, String val, String key) {
         // String sql = "SELECT (ctid::text::point)[1]::bigint AS rId FROM
@@ -95,7 +114,8 @@ public class Psql {
         StringBuilder sqlSB = new StringBuilder("WITH myTable AS");
         sqlSB.append("(");
         sqlSB.append("SELECT ".concat(val).concat(", ROW_NUMBER() OVER (ORDER BY ").concat(val).concat(") AS rId"));
-        sqlSB.append(" FROM ".concat(relName));
+        sqlSB.append(" FROM ".concat(_schema).concat(".`").concat(relName).concat("`"));
+        sqlSB.append(" GROUP BY ".concat(val));
         sqlSB.append(")");
         sqlSB.append("SELECT rId FROM myTable WHERE ".concat(val).concat("='").concat(key).concat("';"));
 
@@ -112,6 +132,7 @@ public class Psql {
             return null;
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println(sql);
             return null;
         }
     }
@@ -121,14 +142,14 @@ public class Psql {
         String sqlWhe = " ON ";
         for (int i = 0; i < cfk.ForeignKeys.size(); i++) {
             ForeignKey fk = cfk.ForeignKeys.get(i);
-            sqlSel = sqlSel.concat(fk.SourceTable).concat(".").concat(fk.SourceAttribute).concat(",");
-            sqlWhe = sqlWhe.concat(fk.SourceTable).concat(".").concat(fk.SourceAttribute).concat(" = ")
-                    .concat(fk.TargetTable).concat(".").concat(fk.TargetAttribute).concat(" AND ");
+            sqlSel = sqlSel.concat("temp1.").concat(fk.SourceAttribute).concat(",");
+            sqlWhe = sqlWhe.concat("temp1.").concat(fk.SourceAttribute).concat(" = ").concat("temp2.")
+                    .concat(fk.TargetAttribute).concat(" AND ");
         }
         sqlSel = sqlSel.substring(0, sqlSel.length() - 1);
         sqlWhe = sqlWhe.substring(0, sqlWhe.length() - 5);
-        String sql = sqlSel.concat(" FROM ").concat(cfk.SourceTable).concat(" INNER JOIN ").concat(cfk.TargetTable)
-                .concat(sqlWhe).concat(";");
+        String sql = sqlSel.concat(" FROM `").concat(cfk.SourceTable).concat("` AS temp1 INNER JOIN `")
+                .concat(cfk.TargetTable).concat("` AS temp2 ").concat(sqlWhe).concat(";");
 
         try {
             Statement stmt = _con.createStatement();
@@ -160,6 +181,7 @@ public class Psql {
             return local;
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println(sql);
             return null;
         }
     }
@@ -171,40 +193,45 @@ public class Psql {
             String currIdentifier = Identifier.id(Optional.of(rId), Optional.of(relName), null, null, null, null, null)
                     .toString();
             Node n = new Node(currIdentifier, relName);
-            PsqlGraph.InsertNodeRow(n);
+            OutputConnection.InsertNodeRow(n);
             return currIdentifier;
         } catch (SQLException e) {
+
             e.printStackTrace();
             return null;
         }
     }
 
     private void CreateProperty(ResultSet values, ResultSetMetaData valuesMd, String currIdentifier) {
-        try {
-            int length = valuesMd.getColumnCount();
-            for (int i = 1; i < length; i++) {
-                String currAtt = valuesMd.getColumnName(i);
-                Object currVal = values.getObject(i);
-                if (currVal != null) {
-                    Property p = new Property(currIdentifier, currAtt, currVal.toString());
-                    PsqlGraph.InsertPropertyRow(p);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        OutputConnection.InsertPropertyRow(values, valuesMd, currIdentifier);
     }
 
     // #endregion
 
     public void CreateNodesAndProperties(String relName) {
-        // String sql = "SELECT (ctid::text::point)[1]::bigint AS rId, * FROM ".concat(relName);
-        String sql = "SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS rId FROM ".concat(relName);
+        // String sql = "SELECT (ctid::text::point)[1]::bigint AS rId, * FROM
+        // ".concat(relName);
 
+        List<String> cols = GetColumns(relName);
+        StringBuilder sqlSB = new StringBuilder("SELECT ");
+        cols.stream().forEach(c -> {
+            sqlSB.append(c).append(",");
+        });
+
+        sqlSB.append(" ROW_NUMBER() OVER (ORDER BY (".concat(cols.get(0)).concat(")) AS rId FROM "));
+        sqlSB.append(_schema.concat(".`").concat(relName).concat("`"));
+        sqlSB.append(" GROUP BY ");
+        cols.stream().forEach(c -> {
+            sqlSB.append(c).append(",");
+        });
+        sqlSB.setLength(sqlSB.length() - 1);
+        sqlSB.append(";");
+
+        String sql = sqlSB.toString();
         try {
             PreparedStatement stmt = _con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
                     ResultSet.CONCUR_READ_ONLY);
-            stmt.setFetchSize(FIVE);
+            stmt.setFetchSize(500);
             ResultSet values = stmt.executeQuery();
             ResultSetMetaData valuesMd = values.getMetaData();
             while (values.next()) {
@@ -213,6 +240,7 @@ public class Psql {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println(sql);
         }
     }
 
@@ -232,16 +260,10 @@ public class Psql {
 
             Integer rId = -1, sId = -1;
 
-            // Get tuple ids.
-            for (int z = 0; z < results.size(); z++) {
-                Column curr = results.get(z);
-                rId = GetTupleIdFromRelation(curr.SourceRelationName, curr.SourceAttribute, curr.Value);
-                sId = GetTupleIdFromRelation(curr.TargetRelationName, curr.TargetAttribute, curr.Value);
-            }
+            // for (int z = 0; z < results.size(); z++) {
+            // Column curr = results.get(z);
 
-            if (rId == -1 || sId == -1) {
-                throw new NullPointerException("rId or sId is -1.");
-            }
+            // }
 
             // Create edges here: (take into consideration composed Fks (size of results /
             // size of foreign keys composing the Composed fk))
@@ -249,13 +271,20 @@ public class Psql {
 
             for (int z = 0; z < length; z++) {
                 Column curr = results.get(z);
+                // Get tuple ids.
+                rId = GetTupleIdFromRelation(curr.SourceRelationName, curr.SourceAttribute, curr.Value);
+                sId = GetTupleIdFromRelation(curr.TargetRelationName, curr.TargetAttribute, curr.Value);
+                if (rId == -1 || sId == -1) {
+                    throw new NullPointerException("rId or sId is -1.");
+                }
+
                 // for each value -> get the node ids of the nodes with label
                 // cfk.SourceTable/cfk.TargetTable
                 // and has a property value = curr.Value
-                List<String> sNodeIds = PsqlGraph.JoinNodeAndProperty(curr.SourceRelationName, curr.SourceAttribute,
-                        curr.Value);
-                List<String> tNodeIds = PsqlGraph.JoinNodeAndProperty(curr.TargetRelationName, curr.TargetAttribute,
-                        curr.Value);
+                List<String> sNodeIds = OutputConnection.JoinNodeAndProperty(curr.SourceRelationName,
+                        curr.SourceAttribute, curr.Value);
+                List<String> tNodeIds = OutputConnection.JoinNodeAndProperty(curr.TargetRelationName,
+                        curr.TargetAttribute, curr.Value);
                 // For all ids obtained -> create edge from all source ids to all target ids.
                 for (int i = 0; i < sNodeIds.size(); i++) {
                     String sNodeId = sNodeIds.get(i);
@@ -263,7 +292,7 @@ public class Psql {
                         Integer id = Identifier.id(Optional.of(rId), Optional.of(cfk.SourceTable), null,
                                 Optional.of(sId), Optional.of(cfk.TargetTable), Optional.of(fksR), Optional.of(fksS));
                         String tNodeId = tNodeIds.get(j);
-                        PsqlGraph.InsertEdgeRow(new Edge(id.toString(), sNodeId, tNodeId,
+                        OutputConnection.InsertEdgeRow(new Edge(id.toString(), sNodeId, tNodeId,
                                 cfk.SourceTable.concat("-").concat(cfk.TargetTable)));
                     }
                 }
