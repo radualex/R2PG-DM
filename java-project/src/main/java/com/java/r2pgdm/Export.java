@@ -9,9 +9,9 @@ import com.opencsv.CSVWriter;
 
 public class Export {
     public static void GenerateCSVs() {
-        GenerateCSV(OutputConnection.GetNodeData(), "nodes.csv", new String[] { "id", "label" });
-        GenerateCSV(OutputConnection.GetPropertyData(), "properties.csv", new String[] { "id", "key", "value" });
-        GenerateCSV(OutputConnection.GetEdgeData(), "edges.csv", new String[] { "id", "srcid", "tgtid", "label" });
+        GenerateCSV(OutputConnection.GetNodeData(), "nodes.csv", new String[] { "nodeid", "label" });
+        GenerateCSV(OutputConnection.GetPropertyData(), "properties.csv", new String[] { "propid", "key", "value" });
+        GenerateCSV(OutputConnection.GetEdgeData(), "edges.csv", new String[] { "edgeid", "srcid", "tgtid", "label" });
     }
 
     private static void GenerateCSV(ResultSet res, String csv, String[] headers) {
