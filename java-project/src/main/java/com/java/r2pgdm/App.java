@@ -25,7 +25,7 @@ public class App {
             String urlOutput = "jdbc:".concat(output.Driver).concat("://").concat(output.Host).concat("/")
                     .concat(output.Database).concat("?serverTimezone=UTC");
 
-            InputConnection inputConn = new InputConnection(urlInput, input.User, input.Password, input.Database);
+            InputConnection inputConn = new InputConnection(urlInput, input.User, input.Password, input.Database, input.Driver);
             OutputConnection outputConn = new OutputConnection(urlOutput, output.User, output.Password);
 
             Instant starts = Instant.now();

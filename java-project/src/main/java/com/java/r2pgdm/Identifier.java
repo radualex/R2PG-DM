@@ -3,10 +3,6 @@ package com.java.r2pgdm;
 import java.util.List;
 import java.util.Optional;
 
-import com.java.r2pgdm.graph.Edge;
-import com.java.r2pgdm.graph.Node;
-import com.java.r2pgdm.graph.Property;
-
 import lombok.Getter;
 import lombok.Setter;
 

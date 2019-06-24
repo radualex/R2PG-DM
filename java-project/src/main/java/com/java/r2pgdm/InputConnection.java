@@ -11,14 +11,20 @@ import com.java.r2pgdm.graph.Node;
 public class InputConnection {
 
     private static final String COLUMN_NAME = "COLUMN_NAME";
-    private static final int FIVE = 5;
+    private char _Quoting = '`';
     private static final String[] TYPES = new String[] { "TABLE" };
     private Connection _con;
     private DatabaseMetaData _metaData;
     private String _schema;
+    private String _relationNameDefinitionStyle;
 
-    public InputConnection(String url, String user, String pass, String schema) {
+    public InputConnection(String url, String user, String pass, String schema, String driver) {
         this._schema = schema;
+        this._relationNameDefinitionStyle = this._schema.concat(".");
+        if (!driver.equals("mysql")) {
+            this._Quoting = '"';
+            this._relationNameDefinitionStyle = "";
+        }
         Connect(url, user, pass);
         GetMetaData();
     }
@@ -108,19 +114,17 @@ public class InputConnection {
 
     // #region Helpers
     private Integer GetTupleIdFromRelation(String relName, String val, String key) {
-        // String sql = "SELECT (ctid::text::point)[1]::bigint AS rId FROM
-        // ".concat(relName).concat(" WHERE ").concat(val)
-        // .concat("='").concat(key).concat("';");
         StringBuilder sqlSB = new StringBuilder("WITH myTable AS");
         sqlSB.append("(");
         sqlSB.append("SELECT ".concat(val).concat(", ROW_NUMBER() OVER (ORDER BY ").concat(val).concat(") AS rId"));
-        sqlSB.append(" FROM ".concat(_schema).concat(".`").concat(relName).concat("`"));
+        sqlSB.append(" FROM ".concat(this._relationNameDefinitionStyle).concat(Character.toString(this._Quoting))
+                .concat(relName).concat(Character.toString(this._Quoting)));
         sqlSB.append(" GROUP BY ".concat(val));
         sqlSB.append(")");
         sqlSB.append("SELECT rId FROM myTable WHERE ".concat(val).concat("='").concat(key).concat("';"));
 
         String sql = sqlSB.toString();
-
+        System.out.println(sql);
         try {
             Statement stmt = _con.createStatement();
             ResultSet values = stmt.executeQuery(sql);
@@ -148,8 +152,10 @@ public class InputConnection {
         }
         sqlSel = sqlSel.substring(0, sqlSel.length() - 1);
         sqlWhe = sqlWhe.substring(0, sqlWhe.length() - 5);
-        String sql = sqlSel.concat(" FROM `").concat(cfk.SourceTable).concat("` AS temp1 INNER JOIN `")
-                .concat(cfk.TargetTable).concat("` AS temp2 ").concat(sqlWhe).concat(";");
+        String sql = sqlSel.concat(" FROM ").concat(Character.toString(_Quoting)).concat(cfk.SourceTable)
+                .concat(Character.toString(_Quoting)).concat(" AS temp1 INNER JOIN ")
+                .concat(Character.toString(_Quoting)).concat(cfk.TargetTable).concat(Character.toString(_Quoting))
+                .concat(" AS temp2 ").concat(sqlWhe).concat(";");
 
         try {
             Statement stmt = _con.createStatement();
@@ -209,9 +215,6 @@ public class InputConnection {
     // #endregion
 
     public void CreateNodesAndProperties(String relName) {
-        // String sql = "SELECT (ctid::text::point)[1]::bigint AS rId, * FROM
-        // ".concat(relName);
-
         List<String> cols = GetColumns(relName);
         StringBuilder sqlSB = new StringBuilder("SELECT ");
         cols.stream().forEach(c -> {
@@ -219,7 +222,8 @@ public class InputConnection {
         });
 
         sqlSB.append(" ROW_NUMBER() OVER (ORDER BY (".concat(cols.get(0)).concat(")) AS rId FROM "));
-        sqlSB.append(_schema.concat(".`").concat(relName).concat("`"));
+        sqlSB.append(this._relationNameDefinitionStyle.concat(Character.toString(_Quoting)).concat(relName)
+                .concat(Character.toString(_Quoting)));
         sqlSB.append(" GROUP BY ");
         cols.stream().forEach(c -> {
             sqlSB.append(c).append(",");
@@ -259,11 +263,6 @@ public class InputConnection {
             }
 
             Integer rId = -1, sId = -1;
-
-            // for (int z = 0; z < results.size(); z++) {
-            // Column curr = results.get(z);
-
-            // }
 
             // Create edges here: (take into consideration composed Fks (size of results /
             // size of foreign keys composing the Composed fk))
