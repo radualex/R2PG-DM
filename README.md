@@ -25,5 +25,8 @@ password=
 
 The application will generate the graph into the output database under the tables: *node*, *edge* and *property*. Also, 3 CSV files are generated in the root folder called: **nodes.csv**, **edges.csv** and **properties.csv**. You can use these files as input for a Neo4j instance by running the script presented in file **script.cypher** located in this repository. 
 
+For more information on how to install and setup a Neo4j instance refer to this website: https://neo4j.com/download/
+For more information on where to copy/paste the csv files, please see Section 2 in the following tutorial: https://neo4j.com/developer/desktop-csv-import/ (ignore the cypher (LOAD) queries in this article and use the queries from script.cypher instead.)
+
 Use Neo4j for visualization. Need plugin APOC installed (dynamic labels) -> https://neo4j-contrib.github.io/neo4j-apoc-procedures/
 
