@@ -17,7 +17,7 @@ connectionString=
 
 Where the *connectionString* represents the jdbc connection string format as defined here: https://vladmihalcea.com/jdbc-driver-connection-url-strings/
 
-The application has been tested with MySQL, PostgreSQL, sqlite.
+The application has been tested with MySQL, PostgreSQL, sqlite, Oracle.
 
 ## Neo4j
 
