@@ -7,19 +7,17 @@ In order to use the application, a config.ini file is necessary for specifying t
 
 ```
 [input]
+connectionString=
 driver=
 host=
-database=
-user=
-password=
 
 [output]
-driver=
-host=
-database=
-user=
-password=
+connectionString=
 ```
+
+Where the *connectionString* represents the jdbc connection string format as defined here: https://vladmihalcea.com/jdbc-driver-connection-url-strings/
+
+The application has been tested with MySQL, PostgreSQL, sqlite.
 
 ## Neo4j
 
