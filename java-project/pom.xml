@@ -71,6 +71,13 @@
       <version>7.3.1.jre12-preview</version>
       <scope>test</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc -->
+    <dependency>
+      <groupId>org.xerial</groupId>
+      <artifactId>sqlite-jdbc</artifactId>
+      <version>3.28.0</version>
+    </dependency>
+    
     <!-- https://mvnrepository.com/artifact/com.oracle/ojdbc14 -->
     <!-- <dependency>
       <groupId>com.oracle</groupId>

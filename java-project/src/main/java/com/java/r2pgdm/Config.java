@@ -9,22 +9,20 @@ public class Config {
     public String Driver;
     @Getter
     @Setter
-    public String Host;
-    @Getter
-    @Setter
     public String Database;
     @Getter
     @Setter
-    public String User;
-    @Getter
-    @Setter
-    public String Password;
+    public String ConnectionString;
 
-    public Config(String driver, String host, String db, String user, String pass) {
+    public Config(String connString, String driver, String db) {
         this.Driver = driver;
-        this.Host = host;
         this.Database = db;
-        this.User = user;
-        this.Password = pass;
+        this.ConnectionString = connString;
+    }
+
+    public Config(String connString) {
+        this.Driver = null;
+        this.Database = null;
+        this.ConnectionString = connString;
     }
 }

@@ -20,13 +20,9 @@ public class App {
             Wini ini = new Wini(new File("config.ini"));
             Config input = GetConfiguration(ini.get("input"));
             Config output = GetConfiguration(ini.get("output"));
-            String urlInput = "jdbc:".concat(input.Driver).concat("://").concat(input.Host).concat("/")
-                    .concat(input.Database).concat("?serverTimezone=UTC");
-            String urlOutput = "jdbc:".concat(output.Driver).concat("://").concat(output.Host).concat("/")
-                    .concat(output.Database).concat("?serverTimezone=UTC");
 
-            InputConnection inputConn = new InputConnection(urlInput, input.User, input.Password, input.Database, input.Driver);
-            OutputConnection outputConn = new OutputConnection(urlOutput, output.User, output.Password);
+            InputConnection inputConn = new InputConnection(input.ConnectionString, input.Database, input.Driver);
+            OutputConnection outputConn = new OutputConnection(output.ConnectionString);
 
             Instant starts = Instant.now();
             // Create node + props
@@ -68,7 +64,9 @@ public class App {
     }
 
     private static Config GetConfiguration(Section section) {
-        return new Config(section.get("driver"), section.get("host"), section.get("database"), section.get("user"),
-                section.get("password"));
+        if (section.getName().equals("input")) {
+            return new Config(section.get("connectionString"), section.get("driver"), section.get("database"));
+        }
+        return new Config(section.get("connectionString"));
     }
 }

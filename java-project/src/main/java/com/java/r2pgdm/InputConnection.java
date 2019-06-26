@@ -17,20 +17,20 @@ public class InputConnection {
     private DatabaseMetaData _metaData;
     private String _schema;
 
-    public InputConnection(String url, String user, String pass, String schema, String driver) {
+    public InputConnection(String url, String schema, String driver) {
         this._schema = schema;
         if (!driver.equals("mysql")) {
             this._Quoting = '"';
         }
-        Connect(url, user, pass);
+        Connect(url);
         GetMetaData();
     }
 
-    private void Connect(String url, String user, String pass) {
+    private void Connect(String url) {
         try {
-            _con = DriverManager.getConnection(url, user, pass);
+            _con = DriverManager.getConnection(url);
             _con.setAutoCommit(false);
-            System.out.println("Connection Psql established.");
+            System.out.println("Connection for input established.");
         } catch (SQLException e) {
             e.printStackTrace();
         }

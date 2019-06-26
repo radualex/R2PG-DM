@@ -12,15 +12,15 @@ public class OutputConnection {
 
     public static Connection _con;
 
-    public OutputConnection(String url, String user, String pass) {
-        Connect(url, user, pass);
+    public OutputConnection(String url) {
+        Connect(url);
         CreateGraphSQL();
     }
 
-    private void Connect(String url, String user, String pass) {
+    private void Connect(String url) {
         try {
-            _con = DriverManager.getConnection(url, user, pass);
-            System.out.println("Connection PsqlGraph established.");
+            _con = DriverManager.getConnection(url);
+            System.out.println("Connection for output established.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
