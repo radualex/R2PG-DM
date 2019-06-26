@@ -14,4 +14,5 @@
     <factorypathentry kind="VARJAR" id="M2_REPO/org/eu/acolyte/jdbc-driver/1.0.51/jdbc-driver-1.0.51.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/commons-io/commons-io/2.5/commons-io-2.5.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/org/xerial/sqlite-jdbc/3.28.0/sqlite-jdbc-3.28.0.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="EXTJAR" id="C:\Projects\R2PG-DM\java-project\..\lib\ojdbc8.jar" enabled="true" runInBatchMode="false"/>
 </factorypath>

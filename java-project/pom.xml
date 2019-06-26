@@ -77,13 +77,13 @@
       <artifactId>sqlite-jdbc</artifactId>
       <version>3.28.0</version>
     </dependency>
-    
-    <!-- https://mvnrepository.com/artifact/com.oracle/ojdbc14 -->
-    <!-- <dependency>
+    <dependency>
       <groupId>com.oracle</groupId>
-      <artifactId>ojdbc14</artifactId>
-      <version>10.2.0.4.0</version>
-    </dependency> -->
+      <artifactId>ojdbc</artifactId>
+      <version>8</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../lib/ojdbc8.jar</systemPath>
+    </dependency>
     
     
   </dependencies>
