@@ -16,14 +16,11 @@ public class InputConnection {
     private Connection _con;
     private DatabaseMetaData _metaData;
     private String _schema;
-    private String _relationNameDefinitionStyle;
 
     public InputConnection(String url, String user, String pass, String schema, String driver) {
         this._schema = schema;
-        this._relationNameDefinitionStyle = this._schema.concat(".");
         if (!driver.equals("mysql")) {
             this._Quoting = '"';
-            this._relationNameDefinitionStyle = "";
         }
         Connect(url, user, pass);
         GetMetaData();
@@ -117,8 +114,8 @@ public class InputConnection {
         StringBuilder sqlSB = new StringBuilder("WITH myTable AS");
         sqlSB.append("(");
         sqlSB.append("SELECT ".concat(val).concat(", ROW_NUMBER() OVER (ORDER BY ").concat(val).concat(") AS rId"));
-        sqlSB.append(" FROM ".concat(this._relationNameDefinitionStyle).concat(Character.toString(this._Quoting))
-                .concat(relName).concat(Character.toString(this._Quoting)));
+        sqlSB.append(" FROM ".concat(Character.toString(this._Quoting)).concat(relName)
+                .concat(Character.toString(this._Quoting)));
         sqlSB.append(" GROUP BY ".concat(val));
         sqlSB.append(")");
         sqlSB.append("SELECT rId FROM myTable WHERE ".concat(val).concat("='").concat(key).concat("';"));
@@ -156,6 +153,8 @@ public class InputConnection {
                 .concat(Character.toString(_Quoting)).concat(" AS temp1 INNER JOIN ")
                 .concat(Character.toString(_Quoting)).concat(cfk.TargetTable).concat(Character.toString(_Quoting))
                 .concat(" AS temp2 ").concat(sqlWhe).concat(";");
+
+        System.out.println(sql.concat(" (160)"));
 
         try {
             Statement stmt = _con.createStatement();
@@ -222,8 +221,7 @@ public class InputConnection {
         });
 
         sqlSB.append(" ROW_NUMBER() OVER (ORDER BY (".concat(cols.get(0)).concat(")) AS rId FROM "));
-        sqlSB.append(this._relationNameDefinitionStyle.concat(Character.toString(_Quoting)).concat(relName)
-                .concat(Character.toString(_Quoting)));
+        sqlSB.append(Character.toString(_Quoting).concat(relName).concat(Character.toString(_Quoting)));
         sqlSB.append(" GROUP BY ");
         cols.stream().forEach(c -> {
             sqlSB.append(c).append(",");
